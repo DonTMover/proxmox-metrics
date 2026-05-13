@@ -1,0 +1,56 @@
+telegram:
+  # Get your bot token from @BotFather
+  token: "YOUR_BOT_TOKEN_HERE"
+  
+  # List of Telegram user IDs allowed to use bot commands
+  allowed_user_ids:
+    - 123456789
+    - 987654321
+  
+  # Chat ID where notifications will be sent
+  # Use /id command to get your ID, or use group chat ID
+  chat_id: -1001234567890
+
+proxmox:
+  # Proxmox node name (use 'pvesh get /nodes' to find)
+  node: "pve"
+  
+  # List of required CT IDs that should be monitored for status
+  required_cts:
+    - 101
+    - 102
+  
+  # List of required VM IDs that should be monitored for status
+  required_vms:
+    - 200
+
+# Alert thresholds (percentage values)
+thresholds:
+  cpu:
+    warning: 80      # Alert if CPU > 80%
+    critical: 95     # Critical alert if CPU > 95%
+  
+  ram:
+    warning: 85      # Alert if RAM usage > 85%
+    critical: 95     # Critical alert if RAM usage > 95%
+  
+  swap:
+    warning: 50      # Alert if swap used > 50%
+    critical: 80     # Critical alert if swap used > 80%
+  
+  disk:
+    warning: 85      # Alert if disk usage > 85%
+    critical: 95     # Critical alert if disk usage > 95%
+
+# Scheduler configuration
+scheduler:
+  # Send periodic summary every N seconds
+  summary_interval: 300
+  
+  # Don't repeat the same alert more often than this (in seconds)
+  # Critical alerts can be repeated after this interval
+  alert_repeat: 1800
+
+# File paths
+state_file: "state.json"
+log_file: "/var/log/proxmox-monitor.log"

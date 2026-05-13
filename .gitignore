@@ -35,7 +35,7 @@ env/
 .DS_Store
 
 # Project-specific
-config.yaml
+#config.yaml
 state.json
 *.log
 
@@ -53,7 +53,7 @@ coverage.xml
 test_*.db
 
 # Runtime artifacts
-alerts_history.json
+#alerts_history.json
 *.sqlite
 .env.local
 .env.test
