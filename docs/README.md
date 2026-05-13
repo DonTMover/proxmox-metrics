@@ -18,12 +18,14 @@ A comprehensive Python monitoring solution for Proxmox VE hosts with Telegram bo
 - 🔔 Alert repeat control to prevent spam
 
 ### Telegram Bot Commands
+- `/id` - Display your Telegram user ID (🔓 **publicly available** - no auth required!)
 - `/start` - Welcome and bot status
-- `/id` - Display your Telegram user ID
 - `/status` - Host system status report
 - `/vms` - List all containers and VMs
 - `/alerts` - Show currently active alerts
 - `/help` - Show available commands
+
+> **New Feature:** Any user can run `/id` to get their Telegram user ID, making it easy to add new authorized users without admin intervention!
 
 ### Security
 - 🔐 Whitelist-based access control (allowed_user_ids)
