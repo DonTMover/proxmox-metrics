@@ -43,3 +43,17 @@ state.json
 *.key
 *.pem
 *.secret
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+test_*.db
+
+# Runtime artifacts
+alerts_history.json
+*.sqlite
+.env.local
+.env.test
