@@ -1,0 +1,20 @@
+[Unit]
+Description=Proxmox Monitor Timer
+Documentation=https://github.com/DonTMover/proxmox-monitor
+Requires=proxmox-monitor.service
+
+[Timer]
+# Start 5 minutes after boot
+OnBootSec=5min
+
+# Run service every 5 minutes
+OnUnitActiveSec=5min
+
+# Store timer state
+Persistent=true
+
+# Be accurate to the second
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

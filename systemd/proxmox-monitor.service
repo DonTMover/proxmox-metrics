@@ -1,0 +1,29 @@
+[Unit]
+Description=Proxmox VE Telegram Monitor
+Documentation=https://github.com/yourusername/proxmox-monitor
+After=network.target
+Wants=proxmox-monitor.timer
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/proxmox-monitor
+ExecStart=/opt/proxmox-monitor/.venv/bin/python3 main.py
+
+# Restart policy
+Restart=always
+RestartSec=30
+
+# Resource limits
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=proxmox-monitor
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/proxmox-monitor /var/log
+
+[Install]
+WantedBy=multi-user.target
