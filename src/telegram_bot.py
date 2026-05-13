@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Telegram bot interface using aiogram - handles commands and sends messages
+Telegram bot interface using aiogram - handles commands and sends messages with inline buttons
 """
 
 import logging
 from typing import List, Optional, Callable, Dict, Any
-from aiogram import Bot, Dispatcher, Router, types
+from aiogram import Bot, Dispatcher, Router, types, F
 from aiogram.filters import Command
-from aiogram.types import Message, User
+from aiogram.types import Message, User, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 
 logger = logging.getLogger(__name__)
 
@@ -141,9 +141,114 @@ class TelegramBot:
 /status - Host system status
 /vms - List all CT/VM and their status
 /alerts - Show active alerts
+/menu - Quick action menu with buttons
 /help - This message
 """
             await message.reply(help_text, parse_mode="Markdown")
+
+        # /menu - Quick action buttons
+        @self.router.message(Command("menu"))
+        async def handle_menu(message: Message):
+            """Handle /menu command with inline buttons"""
+            if not self._is_allowed_user(message.from_user.id):
+                await message.reply("❌ Access denied")
+                return
+
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="📊 Status", callback_data="btn_status"),
+                    InlineKeyboardButton(text="📦 VMs", callback_data="btn_vms"),
+                ],
+                [
+                    InlineKeyboardButton(text="🚨 Alerts", callback_data="btn_alerts"),
+                    InlineKeyboardButton(text="📈 History", callback_data="btn_history"),
+                ],
+                [
+                    InlineKeyboardButton(text="📋 Stats", callback_data="btn_stats"),
+                ]
+            ])
+
+            await message.reply(
+                "🎯 *Quick Menu*\n\nSelect an action:",
+                reply_markup=keyboard,
+                parse_mode="Markdown"
+            )
+
+        # Callback handlers
+        @self.router.callback_query(F.data == "btn_status")
+        async def callback_status(callback: CallbackQuery):
+            """Status button callback"""
+            if not self._is_allowed_user(callback.from_user.id):
+                await callback.answer("❌ Access denied", show_alert=True)
+                return
+
+            if "status" in self.command_handlers:
+                try:
+                    text = await self.command_handlers["status"]()
+                    await callback.message.edit_text(text, parse_mode="Markdown")
+                    await callback.answer("✅ Status updated", show_alert=False)
+                except Exception as e:
+                    await callback.answer(f"❌ Error: {e}", show_alert=True)
+
+        @self.router.callback_query(F.data == "btn_vms")
+        async def callback_vms(callback: CallbackQuery):
+            """VMs button callback"""
+            if not self._is_allowed_user(callback.from_user.id):
+                await callback.answer("❌ Access denied", show_alert=True)
+                return
+
+            if "vms" in self.command_handlers:
+                try:
+                    text = await self.command_handlers["vms"]()
+                    await callback.message.edit_text(text, parse_mode="Markdown")
+                    await callback.answer("✅ VMs list updated", show_alert=False)
+                except Exception as e:
+                    await callback.answer(f"❌ Error: {e}", show_alert=True)
+
+        @self.router.callback_query(F.data == "btn_alerts")
+        async def callback_alerts(callback: CallbackQuery):
+            """Alerts button callback"""
+            if not self._is_allowed_user(callback.from_user.id):
+                await callback.answer("❌ Access denied", show_alert=True)
+                return
+
+            if "alerts" in self.command_handlers:
+                try:
+                    text = await self.command_handlers["alerts"]()
+                    await callback.message.edit_text(text, parse_mode="Markdown")
+                    await callback.answer("✅ Alerts updated", show_alert=False)
+                except Exception as e:
+                    await callback.answer(f"❌ Error: {e}", show_alert=True)
+
+        @self.router.callback_query(F.data == "btn_history")
+        async def callback_history(callback: CallbackQuery):
+            """Alert history button callback"""
+            if not self._is_allowed_user(callback.from_user.id):
+                await callback.answer("❌ Access denied", show_alert=True)
+                return
+
+            if "history" in self.command_handlers:
+                try:
+                    text = await self.command_handlers["history"]()
+                    await callback.message.edit_text(text, parse_mode="Markdown")
+                    await callback.answer("✅ History updated", show_alert=False)
+                except Exception as e:
+                    await callback.answer(f"❌ Error: {e}", show_alert=True)
+
+        @self.router.callback_query(F.data == "btn_stats")
+        async def callback_stats(callback: CallbackQuery):
+            """Statistics button callback"""
+            if not self._is_allowed_user(callback.from_user.id):
+                await callback.answer("❌ Access denied", show_alert=True)
+                return
+
+            if "stats" in self.command_handlers:
+                try:
+                    text = await self.command_handlers["stats"]()
+                    await callback.message.edit_text(text, parse_mode="Markdown")
+                    await callback.answer("✅ Stats updated", show_alert=False)
+                except Exception as e:
+                    await callback.answer(f"❌ Error: {e}", show_alert=True)
 
     def register_command(self, command: str, handler: Callable):
         """Register a custom command handler"""
@@ -271,5 +376,44 @@ class MessageFormatter:
             }.get(alert.get("level", "info"), "ℹ️")
 
             lines.append(f"{emoji} **{alert.get('message', 'Unknown alert')}**\n")
+
+        return "".join(lines)
+
+    @staticmethod
+    def alerts_history(history: List[Dict[str, Any]]) -> str:
+        """Format recent alert history"""
+        if not history:
+            return "📜 No alert history yet"
+
+        lines = ["📜 **Recent Alerts** (last 10)\n\n"]
+        
+        # Show last 10 alerts
+        for alert in history[-10:]:
+            timestamp = alert.get("timestamp", "").split("T")[1][:5] if "T" in alert.get("timestamp", "") else "?"
+            level_emoji = {
+                "critical": "🔴",
+                "warning": "⚠️",
+                "recovery": "✅"
+            }.get(alert.get("level"), "ℹ️")
+            
+            msg = alert.get("message", "unknown")[:40]  # Truncate long messages
+            lines.append(f"{level_emoji} {timestamp} - {msg}\n")
+
+        return "".join(lines)
+
+    @staticmethod
+    def stats_summary(stats: Dict[str, Any]) -> str:
+        """Format statistics summary"""
+        lines = [
+            "📊 **Alert Statistics**\n\n",
+            f"Total alerts: {stats.get('total', 0)}\n",
+            f"🔴 Critical: {stats.get('critical', 0)}\n",
+            f"⚠️ Warnings: {stats.get('warning', 0)}\n",
+            f"✅ Recoveries: {stats.get('recovery', 0)}\n"
+        ]
+
+        if stats.get('total', 0) > 0:
+            critical_pct = (stats.get('critical', 0) / stats.get('total', 1)) * 100
+            lines.append(f"\nCritical %: {critical_pct:.0f}%\n")
 
         return "".join(lines)

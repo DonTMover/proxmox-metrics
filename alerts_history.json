@@ -1,0 +1,12 @@
+[
+  {
+    "timestamp": "2026-05-13T21:54:04.658871",
+    "alert_type": "cpu",
+    "level": "warning",
+    "message": "CPU usage high",
+    "container_id": null,
+    "container_name": null,
+    "metric_value": 85.5,
+    "threshold": 80
+  }
+]

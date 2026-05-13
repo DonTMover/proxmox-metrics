@@ -15,6 +15,7 @@ from typing import Dict, Any
 
 from proxmox import ProxmoxCollector, ContainerMetrics
 from alerts import AlertGenerator, StateManager, Alert, AlertLevel
+from alerts_history import AlertsHistory
 from telegram_bot import TelegramBot, MessageFormatter
 
 # Setup logging - only if we can write to log file
@@ -46,6 +47,7 @@ class ProxmoxMonitor:
             node=self.config["proxmox"].get("node", "pve")
         )
         self.state_manager = StateManager(Path(self.config.get("state_file", "state.json")))
+        self.alert_history = AlertsHistory(Path(self.config.get("alerts_history_file", "alerts_history.json")))
         self.alert_generator = AlertGenerator(
             thresholds=self.config["thresholds"],
             state_manager=self.state_manager,
@@ -61,6 +63,8 @@ class ProxmoxMonitor:
         self.bot.register_command("status", self._cmd_status)
         self.bot.register_command("vms", self._cmd_vms)
         self.bot.register_command("alerts", self._cmd_alerts)
+        self.bot.register_command("history", self._cmd_history)
+        self.bot.register_command("stats", self._cmd_stats)
 
         # State for alerts
         self.last_alerts_sent: Dict[str, Alert] = {}
@@ -154,6 +158,24 @@ class ProxmoxMonitor:
             logger.error(f"Error in /alerts command: {e}")
             return "❌ Error fetching alerts"
 
+    async def _cmd_history(self) -> str:
+        """Command: /history - Show recent alerts from history"""
+        try:
+            history = self.alert_history.get_recent_alerts(count=10)
+            return MessageFormatter.alerts_history(history)
+        except Exception as e:
+            logger.error(f"Error in /history command: {e}")
+            return "❌ Error fetching history"
+
+    async def _cmd_stats(self) -> str:
+        """Command: /stats - Show alert statistics"""
+        try:
+            stats = self.alert_history.get_stats_summary()
+            return MessageFormatter.stats_summary(stats)
+        except Exception as e:
+            logger.error(f"Error in /stats command: {e}")
+            return "❌ Error fetching stats"
+
     async def _check_and_send_alerts(self):
         """Check metrics and send alerts"""
         try:
@@ -169,7 +191,7 @@ class ProxmoxMonitor:
                 self.config["proxmox"].get("required_vms", [])
             ))
 
-            # Send alerts
+            # Send alerts and store in history
             for alert in alerts:
                 try:
                     await self.bot.send_alert(
@@ -179,6 +201,15 @@ class ProxmoxMonitor:
                     )
                     logger.info(f"Alert sent: {alert.alert_type} - {alert.level}")
                     self.last_alerts_sent[f"{alert.alert_type}_{alert.container_id or ''}"] = alert
+                    
+                    # Store in history
+                    self.alert_history.add_alert({
+                        "alert_type": alert.alert_type,
+                        "level": alert.level,
+                        "message": alert.message,
+                        "container_id": alert.container_id,
+                        "container_name": getattr(alert, 'container_name', None)
+                    })
                 except Exception as e:
                     logger.error(f"Failed to send alert: {e}")
 
