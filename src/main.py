@@ -15,16 +15,20 @@ from typing import Dict, Any
 
 from proxmox import ProxmoxCollector, ContainerMetrics
 from alerts import AlertGenerator, StateManager, Alert, AlertLevel
-from telegram import TelegramBot, MessageFormatter
+from telegram_bot import TelegramBot, MessageFormatter
 
-# Setup logging
+# Setup logging - only if we can write to log file
+logging_handlers = [logging.StreamHandler()]  # Always include console
+try:
+    logging_handlers.append(logging.FileHandler('/var/log/proxmox-monitor.log'))
+except (PermissionError, FileNotFoundError):
+    # Fall back to console only if /var/log isn't writable (e.g., during development)
+    pass
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('/var/log/proxmox-monitor.log'),
-        logging.StreamHandler()
-    ]
+    handlers=logging_handlers
 )
 logger = logging.getLogger(__name__)
 

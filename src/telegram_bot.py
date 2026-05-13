@@ -5,11 +5,7 @@ Telegram bot interface - handles commands and sends messages
 
 import logging
 from typing import List, Optional, Callable, Dict, Any
-# Use absolute imports to avoid circular import with module name 'telegram'
-from telegram.update import Update
-from telegram.chat import Chat
-from telegram.replykeyboardmarkup import InlineKeyboardMarkup
-from telegram.keyboardbutton import InlineKeyboardButton
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Chat
 from telegram.ext import Application, CommandHandler, ContextTypes, filters
 from telegram.error import TelegramError
 
