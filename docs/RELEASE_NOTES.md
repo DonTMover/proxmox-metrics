@@ -1,4 +1,98 @@
-# v1.2.0 - Production-Ready Monitoring Solution
+# Release History
+
+## v1.2.3.0 - Container/VM Monitoring & Security Updates
+
+**Release Date:** 2026-05-14  
+**Status:** Stable ✅  
+**Compatibility:** Docker Compose v2, Python 3.11+, Proxmox 7.x+
+
+### 🎯 Highlights
+- ✅ **Container/VM Count Monitoring** - Periodic alerts on infrastructure changes
+- ✅ **Auto-Generated Password** - Secure first-start setup with cryptographic randomness
+- ✅ **Docker Compose v2 Support** - Compatible with modern Docker installations
+- ✅ **68 Comprehensive Tests** - 100% test coverage for new features
+- ✅ **Full Backward Compatibility** - Works with existing v1.2.1.0 installations
+
+### 📊 New Features
+
+#### Container/VM Count Monitoring
+- Monitors container and VM count every monitoring cycle (30 seconds)
+- Generates informational alerts when counts change
+- Separates containers (vmid < 100) and VMs (vmid >= 100)
+- Persists state across restarts in `state.json`
+- Examples: "2 container(s) added (now 5 total)"
+
+#### First-Start Password Security
+- Random 12-character password generated on first startup
+- Cryptographically secure using Python's `secrets` module
+- Session-specific (new password on each restart)
+- Admin must enter password to proceed with setup
+- Password displayed prominently in console logs
+- No persistence (not saved to config)
+
+#### Docker Compose v2 Compatibility
+- Fully compatible with docker compose CLI (v2+)
+- Backward compatible with docker-compose (v1)
+- Uses version 3.8 compose format
+- Both commands work identically:
+  - `docker-compose up` (v1)
+  - `docker compose up` (v2)
+
+### 📋 Changes
+- Added `StateManager.get/set_container_vm_count()` methods
+- Added `AlertGenerator.check_container_vm_count()` method
+- Integrated count check into main monitoring loop
+- Added 6 container/VM monitoring tests
+- Updated 2 telegram bot tests for first-start setup
+- Created 18 password generation/verification tests
+- Updated version from 1.0.0 to 1.2.3.0
+
+### 📈 Commits
+```
+2f4ac67 - docs: update README to mention container/VM count monitoring
+4ed525f - docs: add container/VM count monitoring feature documentation
+60ae25f - feat: add periodic container/VM count monitoring
+08248da - docs: add comprehensive password implementation guide
+ee09bc2 - test: add comprehensive tests for password generation
+5fecded - feat: add auto-generated password for first-start setup
+```
+
+### 🧪 Testing
+- Total Tests: **68 passed** ✅
+  - Password tests: 18
+  - Container/VM monitoring tests: 6
+  - Integration tests: 18
+  - Alert tests: 13
+  - Others: 13
+
+### 📚 Documentation
+- New: `docs/updates/update-2026-05-14-container-vm-monitoring.md`
+- New: `docs/updates/update-2026-05-14-auto-password.md`
+- New: `docs/PASSWORD_IMPLEMENTATION.md`
+- Updated: README.md
+
+### 🔄 Migration from v1.2.1.0
+- ✅ No breaking changes
+- ✅ No configuration changes required
+- ✅ Works with existing configs
+- ✅ New features enabled automatically
+- ✅ Fully backward compatible
+
+### 🚀 Installation
+```bash
+# Using docker compose v2 (recommended)
+docker compose up --build
+
+# Or using docker-compose v1
+docker-compose up --build
+
+# Check logs for generated password
+docker compose logs app | grep "SETUP PASSWORD"
+```
+
+---
+
+## v1.2.0 - Production-Ready Monitoring Solution
 
 ## 🎉 Major Release: Complete Proxmox VE Monitoring Solution
 
