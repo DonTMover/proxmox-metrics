@@ -42,53 +42,51 @@ if ! command -v uv &> /dev/null; then
 fi
 echo -e "${GREEN}uv OK${NC}"
 
-# Create install directory
-echo -e "${YELLOW}Creating installation directory...${NC}"
-mkdir -p "$INSTALL_DIR"
-cd "$INSTALL_DIR"
-
-# Copy project files
-echo -e "${YELLOW}Copying project files...${NC}"
-if [ -f "main.py" ]; then
-    echo "Files already present, skipping copy"
-else
-    echo "Error: Project files not found in current directory"
+# Verify we're in the project directory
+echo -e "${YELLOW}Verifying project files in current directory...${NC}"
+if [ ! -f "src/main.py" ] || [ ! -f "config/config.yaml" ]; then
+    echo -e "${RED}Error: Project files not found. Run this script from the project root directory${NC}"
     exit 1
 fi
 
+# Create install directory
+echo -e "${YELLOW}Creating installation directory...${NC}"
+mkdir -p "$INSTALL_DIR"
+
+# Copy project files
+echo -e "${YELLOW}Copying project files...${NC}"
+cp -r src config pyproject.toml "$INSTALL_DIR/"
+cp systemd/proxmox-monitor.* /etc/systemd/system/
+
 # Initialize Python environment with uv
 echo -e "${YELLOW}Setting up Python environment with uv...${NC}"
+cd "$INSTALL_DIR"
 if [ ! -d ".venv" ]; then
-    uv venv
-    source .venv/bin/activate
-    uv add python-telegram-bot pyyaml psutil
+    uv sync
 else
     echo "Virtual environment already exists"
 fi
 
 # Set permissions
 echo -e "${YELLOW}Setting file permissions...${NC}"
-chmod 755 main.py proxmox.py alerts.py telegram.py
+chmod 755 src/main.py src/proxmox.py src/alerts.py src/telegram_bot.py
 chmod 750 "$INSTALL_DIR"
 
 # Check if config.yaml exists
-if [ ! -f "config.yaml" ]; then
+if [ ! -f "config/config.yaml" ]; then
     echo -e "${RED}config.yaml not found!${NC}"
-    echo -e "${YELLOW}Please copy config.yaml.example to config.yaml and configure it${NC}"
     exit 1
 fi
 
-chmod 660 config.yaml
+chmod 660 config/config.yaml
 
 # Setup systemd service
 echo -e "${YELLOW}Setting up systemd service...${NC}"
-cp systemd/proxmox-monitor.service "$SERVICE_FILE"
-cp systemd/proxmox-monitor.timer "$TIMER_FILE"
-chmod 644 "$SERVICE_FILE" "$TIMER_FILE"
+chmod 644 /etc/systemd/system/proxmox-monitor.service /etc/systemd/system/proxmox-monitor.timer
 
 # Update service file with correct path
-sed -i "s|WorkingDirectory=.*|WorkingDirectory=$INSTALL_DIR|g" "$SERVICE_FILE"
-sed -i "s|ExecStart=.*|ExecStart=$INSTALL_DIR/.venv/bin/python3 main.py|g" "$SERVICE_FILE"
+sed -i "s|WorkingDirectory=.*|WorkingDirectory=$INSTALL_DIR|g" /etc/systemd/system/proxmox-monitor.service
+sed -i "s|ExecStart=.*|ExecStart=$INSTALL_DIR/.venv/bin/python3 -m src.main|g" /etc/systemd/system/proxmox-monitor.service
 
 # Reload systemd
 echo -e "${YELLOW}Reloading systemd daemon...${NC}"

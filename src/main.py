@@ -37,7 +37,10 @@ logger = logging.getLogger(__name__)
 class ProxmoxMonitor:
     """Main monitor application"""
 
-    def __init__(self, config_path: Path = Path("config.yaml")):
+    def __init__(self, config_path: Path = None):
+        if config_path is None:
+            # Try to find config in standard locations
+            config_path = self._find_config()
         self.config_path = config_path
         self.config = self._load_config()
         self.running = True
@@ -68,6 +71,22 @@ class ProxmoxMonitor:
 
         # State for alerts
         self.last_alerts_sent: Dict[str, Alert] = {}
+
+    def _find_config(self) -> Path:
+        """Find config file in standard locations"""
+        standard_paths = [
+            Path("config/config.yaml"),  # Development - relative to project root
+            Path("/etc/proxmox-monitor/config.yaml"),  # Production - system location
+            Path("config.yaml"),  # Current directory
+        ]
+        
+        for path in standard_paths:
+            if path.exists():
+                logger.info(f"Found config at {path}")
+                return path
+        
+        logger.error(f"Config file not found in any standard location: {standard_paths}")
+        sys.exit(1)
 
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from YAML"""
@@ -320,24 +339,7 @@ class ProxmoxMonitor:
 
 async def main():
     """Entry point"""
-    # Try to load config from multiple locations
-    config_paths = [
-        Path("config.yaml"),
-        Path("/opt/proxmox-monitor/config.yaml"),
-        Path("/etc/proxmox-monitor/config.yaml")
-    ]
-
-    config_file = None
-    for path in config_paths:
-        if path.exists():
-            config_file = path
-            break
-
-    if not config_file:
-        logger.error("Config file not found in any standard location")
-        sys.exit(1)
-
-    monitor = ProxmoxMonitor(config_file)
+    monitor = ProxmoxMonitor()
     await monitor.run()
 
 
