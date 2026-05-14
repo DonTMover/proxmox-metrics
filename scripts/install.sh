@@ -66,13 +66,29 @@ echo -e "${GREEN}Project files found${NC}"
 echo -e "${YELLOW}Creating installation directory...${NC}"
 mkdir -p "$INSTALL_DIR"
 
+# Verify systemd directory exists
+if [ ! -d /etc/systemd/system ]; then
+    echo -e "${RED}Error: /etc/systemd/system directory not found${NC}"
+    exit 1
+fi
+
 # Copy project files
 echo -e "${YELLOW}Copying project files...${NC}"
 cp -r "$PROJECT_ROOT/src" "$INSTALL_DIR/"
 cp -r "$PROJECT_ROOT/config" "$INSTALL_DIR/"
 cp "$PROJECT_ROOT/pyproject.toml" "$INSTALL_DIR/"
 cp -r "$PROJECT_ROOT/scripts" "$INSTALL_DIR/"
-cp -r "$PROJECT_ROOT/systemd" /etc/systemd/system/ 2>/dev/null || cp "$PROJECT_ROOT/systemd"/* /etc/systemd/system/
+
+# Copy systemd files
+if [ -d "$PROJECT_ROOT/systemd" ]; then
+    echo -e "${YELLOW}Copying systemd files...${NC}"
+    cp "$PROJECT_ROOT/systemd/proxmox-monitor.service" /etc/systemd/system/
+    cp "$PROJECT_ROOT/systemd/proxmox-monitor.timer" /etc/systemd/system/
+    echo -e "${GREEN}Systemd files copied${NC}"
+else
+    echo -e "${RED}Systemd directory not found at $PROJECT_ROOT/systemd${NC}"
+    exit 1
+fi
 
 # Initialize Python environment with uv
 echo -e "${YELLOW}Setting up Python environment with uv...${NC}"
@@ -87,7 +103,11 @@ fi
 
 # Set permissions
 echo -e "${YELLOW}Setting file permissions...${NC}"
-chmod 755 src/main.py src/proxmox.py src/alerts.py src/telegram_bot.py
+chmod 755 "$INSTALL_DIR/src/main.py"
+chmod 755 "$INSTALL_DIR/src/proxmox.py"
+chmod 755 "$INSTALL_DIR/src/alerts.py"
+chmod 755 "$INSTALL_DIR/src/telegram_bot.py"
+chmod 755 "$INSTALL_DIR/scripts/entrypoint.sh"
 chmod 750 "$INSTALL_DIR"
 
 # Check if config.yaml exists
@@ -106,11 +126,20 @@ chmod 660 "$INSTALL_DIR/config/config.yaml"
 
 # Setup systemd service
 echo -e "${YELLOW}Setting up systemd service...${NC}"
-chmod 644 /etc/systemd/system/proxmox-monitor.service /etc/systemd/system/proxmox-monitor.timer
+if [ -f /etc/systemd/system/proxmox-monitor.service ] && [ -f /etc/systemd/system/proxmox-monitor.timer ]; then
+    chmod 644 /etc/systemd/system/proxmox-monitor.service /etc/systemd/system/proxmox-monitor.timer
+    echo -e "${GREEN}Systemd files permissions set${NC}"
+fi
 
 # Update service file with correct path and use uv run
-sed -i "s|WorkingDirectory=.*|WorkingDirectory=$INSTALL_DIR|g" /etc/systemd/system/proxmox-monitor.service
-sed -i "s|ExecStart=.*|ExecStart=/bin/sh $INSTALL_DIR/scripts/entrypoint.sh|g" /etc/systemd/system/proxmox-monitor.service
+if [ -f /etc/systemd/system/proxmox-monitor.service ]; then
+    sed -i "s|WorkingDirectory=.*|WorkingDirectory=$INSTALL_DIR|g" /etc/systemd/system/proxmox-monitor.service
+    sed -i "s|ExecStart=.*|ExecStart=/bin/sh $INSTALL_DIR/scripts/entrypoint.sh|g" /etc/systemd/system/proxmox-monitor.service
+    echo -e "${GREEN}Service file configured${NC}"
+else
+    echo -e "${RED}Service file not found at /etc/systemd/system/proxmox-monitor.service${NC}"
+    exit 1
+fi
 
 # Reload systemd
 echo -e "${YELLOW}Reloading systemd daemon...${NC}"
