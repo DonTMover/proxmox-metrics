@@ -2,7 +2,7 @@
 
 ## 🚀 Get Started in 3 Steps
 
-### Step 1: Start with Docker (Recommended)
+### Step 1: Start with Docker (Recommended for test)
 ```bash
 cd /Users/dontmover/projects/proxmox-metrics
 docker-compose up --build

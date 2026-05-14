@@ -13,11 +13,11 @@ import time
 from pathlib import Path
 from typing import Dict, Any
 
-from proxmox import ProxmoxCollector, ContainerMetrics
-from alerts import AlertGenerator, StateManager, Alert, AlertLevel
-from alerts_history import AlertsHistory
-from telegram_bot import TelegramBot, MessageFormatter
-from first_start_setup import FirstStartSetup
+from .proxmox import ProxmoxCollector, ContainerMetrics
+from .alerts import AlertGenerator, StateManager, Alert, AlertLevel
+from .alerts_history import AlertsHistory
+from .telegram_bot import TelegramBot, MessageFormatter
+from .first_start_setup import FirstStartSetup
 
 # Setup logging - only if we can write to log file
 logging_handlers = [logging.StreamHandler()]  # Always include console

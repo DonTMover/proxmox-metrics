@@ -6,8 +6,8 @@ export PYTHONPATH="/app/src:$PYTHONPATH"
 
 if [ -n "$PROXMOX_BOT_TOKEN" ]; then
     echo "ℹ️  Updating bot token from environment variable..."
-    python3 /app/scripts/update_token.py
+    uv run python /app/scripts/update_token.py
 fi
 
 echo "🚀 Starting Proxmox Monitor..."
-exec .venv/bin/python3 -m src.main
+exec uv run python -m src.main
