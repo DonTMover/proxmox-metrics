@@ -144,6 +144,11 @@ fi
 echo -e "${YELLOW}Reloading systemd daemon...${NC}"
 systemctl daemon-reload
 
+# Run interactive setup
+echo ""
+echo -e "${YELLOW}Running interactive configuration wizard...${NC}"
+bash "$INSTALL_DIR/scripts/setup.sh" --system
+
 # Enable services
 echo -e "${YELLOW}Enabling services...${NC}"
 systemctl enable proxmox-monitor.service
