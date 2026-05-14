@@ -38,6 +38,7 @@ class ContainerMetrics:
     vmid: int
     name: str
     status: str  # "running" or "stopped"
+    vm_type: str = "unknown"  # "container" or "vm"
     cpu_percent: float = 0.0
     ram_mb: float = 0.0
     max_ram_mb: float = 0.0
@@ -249,7 +250,8 @@ class ProxmoxCollector:
                     containers.append(ContainerMetrics(
                         vmid=vmid,
                         name=name,
-                        status=status
+                        status=status,
+                        vm_type="container"
                     ))
         except Exception as e:
             logger.warning(f"Error getting containers: {e}")
@@ -278,7 +280,8 @@ class ProxmoxCollector:
                     vms.append(ContainerMetrics(
                         vmid=vmid,
                         name=name,
-                        status=status
+                        status=status,
+                        vm_type="vm"
                     ))
         except Exception as e:
             logger.warning(f"Error getting VMs: {e}")

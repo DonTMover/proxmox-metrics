@@ -1,6 +1,6 @@
 # Release History
 
-## v1.2.3.0 - Container/VM Monitoring & Security Updates
+## v1.2.1.0 - Container/VM Monitoring & Security Updates
 
 **Release Date:** 2026-05-14  
 **Status:** Stable ✅  
@@ -11,14 +11,14 @@
 - ✅ **Auto-Generated Password** - Secure first-start setup with cryptographic randomness
 - ✅ **Docker Compose v2 Support** - Compatible with modern Docker installations
 - ✅ **68 Comprehensive Tests** - 100% test coverage for new features
-- ✅ **Full Backward Compatibility** - Works with existing v1.2.1.0 installations
+- ✅ **Full Backward Compatibility** - Works with existing installations
 
 ### 📊 New Features
 
 #### Container/VM Count Monitoring
 - Monitors container and VM count every monitoring cycle (30 seconds)
 - Generates informational alerts when counts change
-- Separates containers (vmid < 100) and VMs (vmid >= 100)
+- Separates containers and VMs using explicit type field
 - Persists state across restarts in `state.json`
 - Examples: "2 container(s) added (now 5 total)"
 
@@ -45,7 +45,7 @@
 - Added 6 container/VM monitoring tests
 - Updated 2 telegram bot tests for first-start setup
 - Created 18 password generation/verification tests
-- Updated version from 1.0.0 to 1.2.3.0
+- Updated version from 1.0.0 to 1.2.1.0
 
 ### 📈 Commits
 ```

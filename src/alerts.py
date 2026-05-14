@@ -280,10 +280,9 @@ class AlertGenerator:
         """Check for changes in container/VM count"""
         alerts = []
         
-        # Separate containers and VMs by checking if vmid < 100 (CT) or >= 100 (VM)
-        # This is Proxmox convention: CT IDs are typically < 100, VM IDs are > 100
-        cts = [c for c in containers if c.vmid < 100]
-        vms = [c for c in containers if c.vmid >= 100]
+        # Separate containers and VMs by type field
+        cts = [c for c in containers if c.vm_type == "container"]
+        vms = [c for c in containers if c.vm_type == "vm"]
         
         # Get previous count
         prev_count = self.state.get_container_vm_count()

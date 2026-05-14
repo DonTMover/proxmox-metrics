@@ -97,9 +97,9 @@ def mock_collector():
     
     # Mock containers
     containers = [
-        ContainerMetrics(vmid=100, name="web-server", status="running", mem_mb=2048),
-        ContainerMetrics(vmid=101, name="db-server", status="running", mem_mb=4096),
-        ContainerMetrics(vmid=200, name="vm-test", status="stopped", mem_mb=0)
+        ContainerMetrics(vmid=100, name="web-server", status="running", ram_mb=2048, vm_type="vm"),
+        ContainerMetrics(vmid=101, name="db-server", status="running", ram_mb=4096, vm_type="vm"),
+        ContainerMetrics(vmid=200, name="vm-test", status="stopped", ram_mb=0, vm_type="vm")
     ]
     collector.get_all_containers_and_vms.return_value = containers
     

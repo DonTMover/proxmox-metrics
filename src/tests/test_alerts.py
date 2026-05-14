@@ -128,12 +128,12 @@ class TestContainerVMCountTracking:
         # Initial count
         manager.set_container_vm_count(containers=2, vms=1)
         
-        # Create containers/VMs list (CT: <100, VM: >=100)
+        # Create containers/VMs list with vm_type field
         containers = [
-            ContainerMetrics(vmid=10, name="ct-1", status="running"),
-            ContainerMetrics(vmid=20, name="ct-2", status="running"),
-            ContainerMetrics(vmid=100, name="vm-1", status="running"),
-            ContainerMetrics(vmid=101, name="vm-2", status="running"),  # New VM
+            ContainerMetrics(vmid=10, name="ct-1", status="running", vm_type="container"),
+            ContainerMetrics(vmid=20, name="ct-2", status="running", vm_type="container"),
+            ContainerMetrics(vmid=100, name="vm-1", status="running", vm_type="vm"),
+            ContainerMetrics(vmid=101, name="vm-2", status="running", vm_type="vm"),  # New VM
         ]
         
         alerts = checker.check_container_vm_count(containers)
@@ -153,10 +153,10 @@ class TestContainerVMCountTracking:
         # Initial count
         manager.set_container_vm_count(containers=3, vms=2)
         
-        # Create containers/VMs list with fewer items
+        # Create containers/VMs list with fewer items and proper vm_type
         containers = [
-            ContainerMetrics(vmid=10, name="ct-1", status="running"),
-            ContainerMetrics(vmid=100, name="vm-1", status="running"),
+            ContainerMetrics(vmid=10, name="ct-1", status="running", vm_type="container"),
+            ContainerMetrics(vmid=100, name="vm-1", status="running", vm_type="vm"),
         ]
         
         alerts = checker.check_container_vm_count(containers)
@@ -175,9 +175,9 @@ class TestContainerVMCountTracking:
         )
         
         containers = [
-            ContainerMetrics(vmid=10, name="ct-1", status="running"),
-            ContainerMetrics(vmid=20, name="ct-2", status="running"),
-            ContainerMetrics(vmid=100, name="vm-1", status="running"),
+            ContainerMetrics(vmid=10, name="ct-1", status="running", vm_type="container"),
+            ContainerMetrics(vmid=20, name="ct-2", status="running", vm_type="container"),
+            ContainerMetrics(vmid=100, name="vm-1", status="running", vm_type="vm"),
         ]
         
         # Set initial count
@@ -190,7 +190,7 @@ class TestContainerVMCountTracking:
         assert len(alerts) == 0
     
     def test_container_vm_separation(self, temp_state_file):
-        """Test correct separation of containers (vmid<100) and VMs (vmid>=100)"""
+        """Test correct separation of containers and VMs by vm_type field"""
         manager = StateManager(temp_state_file)
         checker = AlertGenerator(
             thresholds={"cpu": {}, "ram": {}, "swap": {}, "disk": {}},
@@ -201,10 +201,10 @@ class TestContainerVMCountTracking:
         manager.set_container_vm_count(containers=0, vms=0)
         
         containers = [
-            ContainerMetrics(vmid=50, name="ct-1", status="running"),
-            ContainerMetrics(vmid=99, name="ct-2", status="running"),
-            ContainerMetrics(vmid=100, name="vm-1", status="running"),
-            ContainerMetrics(vmid=200, name="vm-2", status="running"),
+            ContainerMetrics(vmid=50, name="ct-1", status="running", vm_type="container"),
+            ContainerMetrics(vmid=99, name="ct-2", status="running", vm_type="container"),
+            ContainerMetrics(vmid=100, name="vm-1", status="running", vm_type="vm"),
+            ContainerMetrics(vmid=200, name="vm-2", status="running", vm_type="vm"),
         ]
         
         alerts = checker.check_container_vm_count(containers)
