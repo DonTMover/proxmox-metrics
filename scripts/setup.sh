@@ -13,7 +13,8 @@ NC='\033[0m' # No Color
 
 # Determine config file location
 if [ "$1" == "--system" ]; then
-    CONFIG_FILE="/etc/proxmox-monitor/config.yaml"
+    # System installation - save to /opt/proxmox-monitor so app finds it first
+    CONFIG_FILE="/opt/proxmox-monitor/config/config.yaml"
     CONFIG_TEMPLATE="/opt/proxmox-monitor/config/config.empty.yaml"
     IS_SYSTEM=true
 else
