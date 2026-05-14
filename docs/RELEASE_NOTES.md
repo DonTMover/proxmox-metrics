@@ -1,5 +1,50 @@
 # Release History
 
+## v1.2.2.0 - Bug Fixes & Docker Improvements
+
+**Release Date:** 2026-05-14  
+**Status:** Latest ✅  
+**Compatibility:** Docker Compose v2, Python 3.11+, Proxmox 7.x+
+
+### 🎯 Highlights
+- ✅ **Fixed Docker Module Import** - PYTHONPATH configuration for container deployments
+- ✅ **Fixed Container/VM Type Separation** - Uses vm_type field instead of vmid ranges
+- ✅ **Improved Reliability** - All 68 tests passing
+- ✅ **Production Ready** - Tested with docker-compose
+
+### 🐛 Bug Fixes
+- **Docker Import Error** - Fixed ModuleNotFoundError in container by setting PYTHONPATH
+- **Container/VM Separation** - Fixed logic that incorrectly relied on vmid ranges
+  - Old: Assumed vmid < 100 = container, >= 100 = VM
+  - New: Uses explicit vm_type field set by collection methods
+  - Note: vmid can be 0, 1, 91, 111 for either type
+
+### 📋 Changes
+- Set PYTHONPATH=/app/src in Dockerfile ENV
+- Added PYTHONPATH export to entrypoint.sh
+- Updated container/VM collection methods to populate vm_type field
+- Fixed check_container_vm_count() to use vm_type field
+- Updated all test fixtures to include vm_type values
+- Version bumped to 1.2.2.0
+
+### 🧪 Testing
+- Total Tests: **68 passed** ✅
+- Docker build: ✅ Successful
+- Docker run: ✅ No import errors
+
+### 📚 Documentation
+- Updated: RELEASE_NOTES.md with proper vm_type separation explanation
+- Updated: pyproject.toml version to 1.2.2.0
+
+### 🔄 Migration from v1.2.1.0
+- ✅ No breaking changes
+- ✅ No configuration changes required
+- ✅ Fixes Docker deployment issues
+- ✅ Improves reliability for container/VM detection
+- ✅ Fully backward compatible
+
+---
+
 ## v1.2.1.0 - Container/VM Monitoring & Security Updates
 
 **Release Date:** 2026-05-14  
