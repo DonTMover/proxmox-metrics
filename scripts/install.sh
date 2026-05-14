@@ -134,6 +134,8 @@ fi
 # Update service file with correct working directory
 if [ -f /etc/systemd/system/proxmox-monitor.service ]; then
     sed -i "s|WorkingDirectory=.*|WorkingDirectory=$INSTALL_DIR|g" /etc/systemd/system/proxmox-monitor.service
+    # Also set config path if it uses /etc/proxmox-monitor
+    sed -i "s|/etc/proxmox-monitor|$INSTALL_DIR/config|g" /etc/systemd/system/proxmox-monitor.service
     echo -e "${GREEN}Service file configured${NC}"
 else
     echo -e "${RED}Service file not found at /etc/systemd/system/proxmox-monitor.service${NC}"
@@ -143,6 +145,9 @@ fi
 # Reload systemd
 echo -e "${YELLOW}Reloading systemd daemon...${NC}"
 systemctl daemon-reload
+
+# Create config directory for system installation
+mkdir -p /etc/proxmox-monitor
 
 # Run interactive setup
 echo ""

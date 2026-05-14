@@ -48,6 +48,12 @@ echo -e "${BLUE}║   Interactive Configuration Tool${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
+# Ensure config directory exists
+CONFIG_DIR="$(dirname "$CONFIG_FILE")"
+if [ ! -d "$CONFIG_DIR" ]; then
+    mkdir -p "$CONFIG_DIR"
+fi
+
 # Copy template
 cp "$CONFIG_TEMPLATE" "$CONFIG_FILE"
 chmod 600 "$CONFIG_FILE"
