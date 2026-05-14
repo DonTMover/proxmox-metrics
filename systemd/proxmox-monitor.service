@@ -8,7 +8,11 @@ Wants=proxmox-monitor.timer
 Type=simple
 User=root
 WorkingDirectory=/opt/proxmox-monitor
-ExecStart=/opt/proxmox-monitor/.venv/bin/python3 -m src.main
+
+# Set PATH to include root's local bin for uv
+Environment="PATH=/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+ExecStart=/bin/sh /opt/proxmox-monitor/scripts/entrypoint.sh
 
 # Restart policy
 Restart=always

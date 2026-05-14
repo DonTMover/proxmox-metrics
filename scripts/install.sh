@@ -131,10 +131,9 @@ if [ -f /etc/systemd/system/proxmox-monitor.service ] && [ -f /etc/systemd/syste
     echo -e "${GREEN}Systemd files permissions set${NC}"
 fi
 
-# Update service file with correct path and use uv run
+# Update service file with correct working directory
 if [ -f /etc/systemd/system/proxmox-monitor.service ]; then
     sed -i "s|WorkingDirectory=.*|WorkingDirectory=$INSTALL_DIR|g" /etc/systemd/system/proxmox-monitor.service
-    sed -i "s|ExecStart=.*|ExecStart=/bin/sh $INSTALL_DIR/scripts/entrypoint.sh|g" /etc/systemd/system/proxmox-monitor.service
     echo -e "${GREEN}Service file configured${NC}"
 else
     echo -e "${RED}Service file not found at /etc/systemd/system/proxmox-monitor.service${NC}"
