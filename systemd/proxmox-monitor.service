@@ -23,11 +23,9 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=proxmox-monitor
 
-# Security hardening
+# Security hardening (relaxed to allow uv access in /root/.local/bin)
 NoNewPrivileges=true
-ProtectSystem=strict
-ProtectHome=yes
-ReadWritePaths=/opt/proxmox-monitor /var/log
+ReadWritePaths=/opt/proxmox-monitor /var/log /root/.local/bin
 
 [Install]
 WantedBy=multi-user.target
