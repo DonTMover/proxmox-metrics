@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  proxmox-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: proxmox-monitor-test
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./config:/app/config
+      - ./state.json:/app/state.json
+      - ./alerts_history.json:/app/alerts_history.json
+      - ./logs:/var/log
+    ports:
+      - "8000:8000"  # If you add HTTP health check
+    restart: unless-stopped
+    networks:
+      - proxmox-network
+    # Mount Proxmox API (only if running on Proxmox host)
+    # volumes:
+    #   - /etc/pve:/etc/pve:ro
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+
+networks:
+  proxmox-network:
+    driver: bridge

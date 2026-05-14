@@ -1,0 +1,60 @@
+# Proxmox Monitor - Empty Configuration Template
+# This file is used for first-start setup
+# The bot will guide you through configuration via Telegram
+
+telegram:
+  # Get your bot token from @BotFather
+  token: ""
+  
+  # List of Telegram user IDs allowed to use bot commands
+  # Will be populated during first-start setup
+  allowed_user_ids: []
+  
+  # Chat ID where notifications will be sent
+  # Will be set during first-start setup
+  chat_id: null
+
+proxmox:
+  # Proxmox node name (use 'pvesh get /nodes' to find)
+  node: "pve"
+  
+  # List of required CT IDs that should be monitored for status
+  required_cts: []
+  
+  # List of required VM IDs that should be monitored for status
+  required_vms: []
+
+# Alert thresholds (percentage values)
+thresholds:
+  cpu:
+    warning: 80      # Alert if CPU > 80%
+    critical: 95     # Critical alert if CPU > 95%
+  
+  ram:
+    warning: 85      # Alert if RAM usage > 85%
+    critical: 95     # Critical alert if RAM usage > 95%
+  
+  swap:
+    warning: 50      # Alert if swap used > 50%
+    critical: 80     # Critical alert if swap used > 80%
+  
+  disk:
+    warning: 85      # Alert if disk usage > 85%
+    critical: 95     # Critical alert if disk usage > 95%
+
+# Scheduler configuration
+scheduler:
+  # Send periodic summary every N seconds
+  summary_interval: 300
+  
+  # Don't repeat the same alert more often than this (in seconds)
+  # Critical alerts can be repeated after this interval
+  alert_repeat: 1800
+
+# File paths
+state_file: "state.json"
+log_file: "/var/log/proxmox-monitor.log"
+
+# First-start setup flag
+first_start: true
+setup_password: ""
