@@ -37,6 +37,27 @@ class TestTelegramBot:
         )
         assert bot is not None
         assert bot.chat_id == 987654321
+        assert bot.first_start_setup is None
+    
+    @pytest.mark.asyncio
+    async def test_telegram_bot_initialization_with_first_start(self):
+        """Test TelegramBot initialization with first_start_setup"""
+        config = {
+            "token": "test_token",
+            "allowed_user_ids": [123456789],
+            "chat_id": 987654321
+        }
+        
+        mock_setup = MagicMock()
+        
+        bot = TelegramBot(
+            token=config["token"],
+            allowed_user_ids=config["allowed_user_ids"],
+            chat_id=config["chat_id"],
+            first_start_setup=mock_setup
+        )
+        assert bot is not None
+        assert bot.first_start_setup == mock_setup
     
     @pytest.mark.asyncio
     async def test_send_message(self):
