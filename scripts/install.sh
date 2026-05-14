@@ -42,12 +42,18 @@ if ! command -v uv &> /dev/null; then
 fi
 echo -e "${GREEN}uv OK${NC}"
 
-# Verify we're in the project directory
-echo -e "${YELLOW}Verifying project files in current directory...${NC}"
-if [ ! -f "src/main.py" ] || [ ! -f "config/config.yaml" ]; then
-    echo -e "${RED}Error: Project files not found. Run this script from the project root directory${NC}"
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Verify we have the required project files
+echo -e "${YELLOW}Verifying project files...${NC}"
+if [ ! -f "$PROJECT_ROOT/src/main.py" ] || [ ! -f "$PROJECT_ROOT/config/config.yaml" ]; then
+    echo -e "${RED}Error: Project files not found in $PROJECT_ROOT${NC}"
+    echo "Required files: src/main.py and config/config.yaml"
     exit 1
 fi
+echo -e "${GREEN}Project files found${NC}"
 
 # Create install directory
 echo -e "${YELLOW}Creating installation directory...${NC}"
@@ -55,16 +61,21 @@ mkdir -p "$INSTALL_DIR"
 
 # Copy project files
 echo -e "${YELLOW}Copying project files...${NC}"
-cp -r src config pyproject.toml "$INSTALL_DIR/"
-cp systemd/proxmox-monitor.* /etc/systemd/system/
+cp -r "$PROJECT_ROOT/src" "$INSTALL_DIR/"
+cp -r "$PROJECT_ROOT/config" "$INSTALL_DIR/"
+cp "$PROJECT_ROOT/pyproject.toml" "$INSTALL_DIR/"
+cp "$PROJECT_ROOT/scripts" "$INSTALL_DIR/"
+cp -r "$PROJECT_ROOT/systemd" /etc/systemd/system/ 2>/dev/null || cp "$PROJECT_ROOT/systemd"/* /etc/systemd/system/
 
 # Initialize Python environment with uv
 echo -e "${YELLOW}Setting up Python environment with uv...${NC}"
 cd "$INSTALL_DIR"
-if [ ! -d ".venv" ]; then
+if [ ! -f "uv.lock" ]; then
+    echo "Running uv sync..."
     uv sync
+    echo -e "${GREEN}Python environment setup complete${NC}"
 else
-    echo "Virtual environment already exists"
+    echo "Python environment already configured"
 fi
 
 # Set permissions
@@ -73,9 +84,15 @@ chmod 755 src/main.py src/proxmox.py src/alerts.py src/telegram_bot.py
 chmod 750 "$INSTALL_DIR"
 
 # Check if config.yaml exists
-if [ ! -f "config/config.yaml" ]; then
-    echo -e "${RED}config.yaml not found!${NC}"
-    exit 1
+if [ ! -f "$INSTALL_DIR/config/config.yaml" ]; then
+    echo -e "${YELLOW}config.yaml not found, creating from template...${NC}"
+    if [ -f "$INSTALL_DIR/config/config.empty.yaml" ]; then
+        cp "$INSTALL_DIR/config/config.empty.yaml" "$INSTALL_DIR/config/config.yaml"
+        echo -e "${GREEN}Created config.yaml from template${NC}"
+    else
+        echo -e "${RED}Neither config.yaml nor config.empty.yaml found!${NC}"
+        exit 1
+    fi
 fi
 
 chmod 660 config/config.yaml
@@ -84,9 +101,9 @@ chmod 660 config/config.yaml
 echo -e "${YELLOW}Setting up systemd service...${NC}"
 chmod 644 /etc/systemd/system/proxmox-monitor.service /etc/systemd/system/proxmox-monitor.timer
 
-# Update service file with correct path
+# Update service file with correct path and use uv run
 sed -i "s|WorkingDirectory=.*|WorkingDirectory=$INSTALL_DIR|g" /etc/systemd/system/proxmox-monitor.service
-sed -i "s|ExecStart=.*|ExecStart=$INSTALL_DIR/.venv/bin/python3 -m src.main|g" /etc/systemd/system/proxmox-monitor.service
+sed -i "s|ExecStart=.*|ExecStart=/bin/sh $INSTALL_DIR/scripts/entrypoint.sh|g" /etc/systemd/system/proxmox-monitor.service
 
 # Reload systemd
 echo -e "${YELLOW}Reloading systemd daemon...${NC}"
