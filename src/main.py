@@ -212,6 +212,7 @@ class ProxmoxMonitor:
                 self.config["proxmox"].get("required_cts", []) +
                 self.config["proxmox"].get("required_vms", [])
             ))
+            alerts.extend(self.alert_generator.check_container_vm_count(containers))
 
             # Send alerts and store in history
             for alert in alerts:

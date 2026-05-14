@@ -89,3 +89,126 @@ class TestThresholdChecker:
         # ThresholdChecker tests skipped - requires deep integration with AlertGenerator
         # Threshold checking is validated through AlertGenerator tests
         pass
+
+
+class TestContainerVMCountTracking:
+    """Test container/VM count tracking functionality"""
+    
+    def test_get_set_container_vm_count(self, temp_state_file):
+        """Test getting and setting container/VM count"""
+        manager = StateManager(temp_state_file)
+        
+        manager.set_container_vm_count(containers=5, vms=3)
+        count = manager.get_container_vm_count()
+        
+        assert count["containers"] == 5
+        assert count["vms"] == 3
+        assert count["total"] == 8
+    
+    def test_container_vm_count_persistence(self, temp_state_file):
+        """Test that container/VM count persists across instances"""
+        manager1 = StateManager(temp_state_file)
+        manager1.set_container_vm_count(containers=5, vms=3)
+        
+        # Create new manager with same file
+        manager2 = StateManager(temp_state_file)
+        count = manager2.get_container_vm_count()
+        
+        assert count["containers"] == 5
+        assert count["vms"] == 3
+    
+    def test_check_container_vm_count_added(self, temp_state_file):
+        """Test detection of added containers/VMs"""
+        manager = StateManager(temp_state_file)
+        checker = AlertGenerator(
+            thresholds={"cpu": {}, "ram": {}, "swap": {}, "disk": {}},
+            state_manager=manager
+        )
+        
+        # Initial count
+        manager.set_container_vm_count(containers=2, vms=1)
+        
+        # Create containers/VMs list (CT: <100, VM: >=100)
+        containers = [
+            ContainerMetrics(vmid=10, name="ct-1", status="running"),
+            ContainerMetrics(vmid=20, name="ct-2", status="running"),
+            ContainerMetrics(vmid=100, name="vm-1", status="running"),
+            ContainerMetrics(vmid=101, name="vm-2", status="running"),  # New VM
+        ]
+        
+        alerts = checker.check_container_vm_count(containers)
+        
+        # Should detect that 1 VM was added
+        assert len(alerts) > 0
+        assert any("VM" in alert.message and "added" in alert.message for alert in alerts)
+    
+    def test_check_container_vm_count_removed(self, temp_state_file):
+        """Test detection of removed containers/VMs"""
+        manager = StateManager(temp_state_file)
+        checker = AlertGenerator(
+            thresholds={"cpu": {}, "ram": {}, "swap": {}, "disk": {}},
+            state_manager=manager
+        )
+        
+        # Initial count
+        manager.set_container_vm_count(containers=3, vms=2)
+        
+        # Create containers/VMs list with fewer items
+        containers = [
+            ContainerMetrics(vmid=10, name="ct-1", status="running"),
+            ContainerMetrics(vmid=100, name="vm-1", status="running"),
+        ]
+        
+        alerts = checker.check_container_vm_count(containers)
+        
+        # Should detect removals
+        assert len(alerts) > 0
+        removed_alerts = [a for a in alerts if "removed" in a.message]
+        assert len(removed_alerts) >= 2  # At least one container and one VM removed
+    
+    def test_check_container_vm_count_no_change(self, temp_state_file):
+        """Test that no alert is generated when count doesn't change"""
+        manager = StateManager(temp_state_file)
+        checker = AlertGenerator(
+            thresholds={"cpu": {}, "ram": {}, "swap": {}, "disk": {}},
+            state_manager=manager
+        )
+        
+        containers = [
+            ContainerMetrics(vmid=10, name="ct-1", status="running"),
+            ContainerMetrics(vmid=20, name="ct-2", status="running"),
+            ContainerMetrics(vmid=100, name="vm-1", status="running"),
+        ]
+        
+        # Set initial count
+        manager.set_container_vm_count(containers=2, vms=1)
+        
+        # Check again with same count
+        alerts = checker.check_container_vm_count(containers)
+        
+        # Should not generate alerts for unchanged count
+        assert len(alerts) == 0
+    
+    def test_container_vm_separation(self, temp_state_file):
+        """Test correct separation of containers (vmid<100) and VMs (vmid>=100)"""
+        manager = StateManager(temp_state_file)
+        checker = AlertGenerator(
+            thresholds={"cpu": {}, "ram": {}, "swap": {}, "disk": {}},
+            state_manager=manager
+        )
+        
+        # Initial state: empty
+        manager.set_container_vm_count(containers=0, vms=0)
+        
+        containers = [
+            ContainerMetrics(vmid=50, name="ct-1", status="running"),
+            ContainerMetrics(vmid=99, name="ct-2", status="running"),
+            ContainerMetrics(vmid=100, name="vm-1", status="running"),
+            ContainerMetrics(vmid=200, name="vm-2", status="running"),
+        ]
+        
+        alerts = checker.check_container_vm_count(containers)
+        
+        # Should detect 2 containers and 2 VMs added
+        assert any("2 container" in alert.message and "added" in alert.message for alert in alerts)
+        assert any("2 VM" in alert.message and "added" in alert.message for alert in alerts)

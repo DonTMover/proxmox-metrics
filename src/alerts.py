@@ -102,6 +102,21 @@ class StateManager:
         self.state["last_summary"] = timestamp
         self._save_state()
 
+    def get_container_vm_count(self) -> Dict[str, int]:
+        """Get tracked container/VM count"""
+        if "container_vm_count" not in self.state:
+            self.state["container_vm_count"] = {"containers": 0, "vms": 0, "total": 0}
+        return self.state["container_vm_count"]
+
+    def set_container_vm_count(self, containers: int, vms: int):
+        """Store container/VM count"""
+        if "container_vm_count" not in self.state:
+            self.state["container_vm_count"] = {}
+        self.state["container_vm_count"]["containers"] = containers
+        self.state["container_vm_count"]["vms"] = vms
+        self.state["container_vm_count"]["total"] = containers + vms
+        self._save_state()
+
 
 class ThresholdChecker:
     """Checks metrics against thresholds"""
@@ -259,6 +274,51 @@ class AlertGenerator:
                     ))
                     self.state.set_alert_level(alert_key, AlertLevel.RECOVERY.value)
 
+        return alerts
+
+    def check_container_vm_count(self, containers: List) -> List[Alert]:
+        """Check for changes in container/VM count"""
+        alerts = []
+        
+        # Separate containers and VMs by checking if vmid < 100 (CT) or >= 100 (VM)
+        # This is Proxmox convention: CT IDs are typically < 100, VM IDs are > 100
+        cts = [c for c in containers if c.vmid < 100]
+        vms = [c for c in containers if c.vmid >= 100]
+        
+        # Get previous count
+        prev_count = self.state.get_container_vm_count()
+        prev_cts = prev_count.get("containers", 0)
+        prev_vms = prev_count.get("vms", 0)
+        
+        current_cts = len(cts)
+        current_vms = len(vms)
+        
+        # Update state
+        self.state.set_container_vm_count(current_cts, current_vms)
+        
+        # Check for changes
+        if current_cts != prev_cts:
+            change = current_cts - prev_cts
+            change_type = "added" if change > 0 else "removed"
+            message = f"{abs(change)} container(s) {change_type} (now {current_cts} total)"
+            alerts.append(Alert(
+                alert_type="container_vm_count",
+                level=AlertLevel.INFO.value,
+                message=message
+            ))
+            logger.info(f"Container count change detected: {message}")
+        
+        if current_vms != prev_vms:
+            change = current_vms - prev_vms
+            change_type = "added" if change > 0 else "removed"
+            message = f"{abs(change)} VM(s) {change_type} (now {current_vms} total)"
+            alerts.append(Alert(
+                alert_type="container_vm_count",
+                level=AlertLevel.INFO.value,
+                message=message
+            ))
+            logger.info(f"VM count change detected: {message}")
+        
         return alerts
 
     def check_recovery(self) -> List[Alert]:
