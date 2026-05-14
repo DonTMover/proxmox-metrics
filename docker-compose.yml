@@ -9,6 +9,10 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=INFO
+      # Optional: Pass bot token via environment variable
+      # Set in .env file: PROXMOX_BOT_TOKEN=your_token_here
+      # See .env.example for reference
+      - PROXMOX_BOT_TOKEN=${PROXMOX_BOT_TOKEN:-}
     volumes:
       - ./config:/app/config
       - ./state.json:/app/state.json

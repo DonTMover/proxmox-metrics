@@ -5,6 +5,7 @@ Handles initial configuration via Telegram bot with inline buttons
 """
 
 import logging
+import os
 import yaml
 from pathlib import Path
 from typing import Dict, Any, Optional, Callable
@@ -220,6 +221,11 @@ class FirstStartSetup:
     def is_first_start(self) -> bool:
         """Check if this is first start"""
         try:
+            # If bot token is provided via environment, not first start
+            if os.getenv("PROXMOX_BOT_TOKEN"):
+                logger.info("Bot token found in environment variable")
+                return False
+            
             if not self.config_path.exists():
                 return True
             
