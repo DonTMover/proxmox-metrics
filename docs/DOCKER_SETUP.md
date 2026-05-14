@@ -91,13 +91,40 @@ Quick action menu with inline buttons
 
 ## Environment Variables
 
-Set in `docker-compose.yml`:
+Set in `docker-compose.yml` or `.env` file:
 
 ```yaml
 environment:
-  - PYTHONUNBUFFERED=1    # Unbuffered Python output
-  - LOG_LEVEL=INFO        # Logging level
+  - PYTHONUNBUFFERED=1      # Unbuffered Python output
+  - LOG_LEVEL=INFO          # Logging level
+  - PROXMOX_BOT_TOKEN=      # Optional: Telegram bot token
 ```
+
+### Bot Token Environment Variable
+
+**Feature:** Pass bot token directly to Docker for automated setup.
+
+**Usage Option 1: .env file (Recommended)**
+```bash
+# Create .env file
+echo "PROXMOX_BOT_TOKEN=123456789:ABCDefghijklmnop" > .env
+
+# Run docker-compose
+docker-compose up --build
+```
+
+**Usage Option 2: docker-compose.yml**
+```yaml
+environment:
+  - PROXMOX_BOT_TOKEN=123456789:ABCDefghijklmnop
+```
+
+**Usage Option 3: Command line**
+```bash
+PROXMOX_BOT_TOKEN="123456789:ABCDefghijklmnop" docker-compose up
+```
+
+**Result:** If `PROXMOX_BOT_TOKEN` is set, config will be auto-populated with token and setup skips token entry.
 
 ## Inline Button Examples
 
