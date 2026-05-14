@@ -52,6 +52,7 @@ For detailed structure → see [`docs/STRUCTURE.md`](docs/STRUCTURE.md)
 ### Monitoring
 - ✅ CPU, RAM, Swap, Disk usage
 - ✅ Container/VM status
+- ✅ Container/VM count tracking (alerts on changes)
 - ✅ System uptime & temperature
 - ✅ Custom alert thresholds
 
