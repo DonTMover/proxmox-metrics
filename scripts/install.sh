@@ -38,8 +38,15 @@ echo "Checking for uv package manager..."
 if ! command -v uv &> /dev/null; then
     echo -e "${YELLOW}Installing uv package manager...${NC}"
     curl -LsSf https://astral.sh/uv/install.sh | sh
+    # Add uv to PATH for this session
     export PATH="$HOME/.local/bin:$PATH"
+    # Also add to root's PATH permanently for sudo
+    if ! grep -q "\.local/bin" /root/.bashrc 2>/dev/null; then
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> /root/.bashrc
+    fi
 fi
+# Ensure uv is in PATH
+export PATH="$HOME/.local/bin:$PATH"
 echo -e "${GREEN}uv OK${NC}"
 
 # Get the directory where this script is located
