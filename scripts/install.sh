@@ -71,7 +71,7 @@ echo -e "${YELLOW}Copying project files...${NC}"
 cp -r "$PROJECT_ROOT/src" "$INSTALL_DIR/"
 cp -r "$PROJECT_ROOT/config" "$INSTALL_DIR/"
 cp "$PROJECT_ROOT/pyproject.toml" "$INSTALL_DIR/"
-cp "$PROJECT_ROOT/scripts" "$INSTALL_DIR/"
+cp -r "$PROJECT_ROOT/scripts" "$INSTALL_DIR/"
 cp -r "$PROJECT_ROOT/systemd" /etc/systemd/system/ 2>/dev/null || cp "$PROJECT_ROOT/systemd"/* /etc/systemd/system/
 
 # Initialize Python environment with uv
@@ -102,7 +102,7 @@ if [ ! -f "$INSTALL_DIR/config/config.yaml" ]; then
     fi
 fi
 
-chmod 660 config/config.yaml
+chmod 660 "$INSTALL_DIR/config/config.yaml"
 
 # Setup systemd service
 echo -e "${YELLOW}Setting up systemd service...${NC}"
