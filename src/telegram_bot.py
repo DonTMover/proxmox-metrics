@@ -15,13 +15,14 @@ logger = logging.getLogger(__name__)
 class TelegramBot:
     """Telegram bot for Proxmox monitoring using aiogram"""
 
-    def __init__(self, token: str, allowed_user_ids: List[int], chat_id: int | str):
+    def __init__(self, token: str, allowed_user_ids: List[int], chat_id: int | str, first_start_setup=None):
         self.token = token
         self.allowed_user_ids = allowed_user_ids
         self.chat_id = chat_id
         self.bot: Optional[Bot] = None
         self.dp: Optional[Dispatcher] = None
         self.router = Router()
+        self.first_start_setup = first_start_setup
 
         # Callback storage
         self.command_handlers: Dict[str, Callable] = {}
@@ -39,6 +40,11 @@ class TelegramBot:
             # Setup router
             self._setup_handlers()
             self.dp.include_router(self.router)
+            
+            # Include first-start setup router if provided
+            if self.first_start_setup:
+                self.dp.include_router(self.first_start_setup.router)
+                logger.info("First-start setup router registered")
 
             logger.info("Telegram bot initialized")
             return True

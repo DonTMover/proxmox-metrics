@@ -6,6 +6,8 @@ Handles initial configuration via Telegram bot with inline buttons
 
 import logging
 import os
+import secrets
+import string
 import yaml
 from pathlib import Path
 from typing import Dict, Any, Optional, Callable
@@ -24,6 +26,7 @@ class FirstStartSetup:
         self.config: Dict[str, Any] = {}
         self.setup_state: Dict[int, Dict[str, Any]] = {}  # Track setup state per user
         self.router = Router()
+        self.generated_password: Optional[str] = None  # Password generated on first start
         self._setup_handlers()
 
     def _setup_handlers(self):
@@ -201,21 +204,35 @@ class FirstStartSetup:
         )
 
     def _needs_password(self) -> bool:
-        """Check if setup password is configured"""
+        """Check if setup password is configured or generated"""
         try:
             with open(self.config_path, 'r') as f:
                 config = yaml.safe_load(f)
-            return bool(config.get("setup_password"))
+            return bool(config.get("setup_password") or self.generated_password)
         except Exception:
-            return False
+            return self.generated_password is not None
 
     def _verify_password(self, password: str) -> bool:
-        """Verify setup password"""
+        """Verify setup password (either from config or generated)"""
         try:
+            # Check if password matches generated password (priority)
+            if self.generated_password and password == self.generated_password:
+                logger.info("✅ Generated password verified successfully")
+                return True
+            
+            # Check if password matches configured password
             with open(self.config_path, 'r') as f:
                 config = yaml.safe_load(f)
-            return password == config.get("setup_password", "")
-        except Exception:
+            
+            configured_password = config.get("setup_password", "")
+            if configured_password and password == configured_password:
+                logger.info("✅ Configured password verified successfully")
+                return True
+            
+            logger.warning("❌ Invalid password attempt")
+            return False
+        except Exception as e:
+            logger.error(f"Password verification error: {e}")
             return False
 
     def is_first_start(self) -> bool:
@@ -240,6 +257,28 @@ class FirstStartSetup:
             )
         except Exception:
             return True
+
+    @staticmethod
+    def generate_password(length: int = 12) -> str:
+        """Generate a random secure password"""
+        alphabet = string.ascii_letters + string.digits + string.punctuation
+        # Remove ambiguous characters
+        alphabet = alphabet.replace('"', '').replace("'", '').replace('`', '')
+        password = ''.join(secrets.choice(alphabet) for _ in range(length))
+        return password
+
+    def set_generated_password(self, password: str) -> None:
+        """Set the generated password for this session"""
+        self.generated_password = password
+        logger.warning(
+            f"\n"
+            f"{'═' * 60}\n"
+            f"🔐 SETUP PASSWORD GENERATED\n"
+            f"Password: {password}\n"
+            f"You must enter this password to start setup.\n"
+            f"(This password is valid only for this session)\n"
+            f"{'═' * 60}\n"
+        )
 
     def save_config(self, state: Dict[str, Any]) -> bool:
         """Save configuration from setup state"""

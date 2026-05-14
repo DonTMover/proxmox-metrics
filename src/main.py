@@ -17,6 +17,7 @@ from proxmox import ProxmoxCollector, ContainerMetrics
 from alerts import AlertGenerator, StateManager, Alert, AlertLevel
 from alerts_history import AlertsHistory
 from telegram_bot import TelegramBot, MessageFormatter
+from first_start_setup import FirstStartSetup
 
 # Setup logging - only if we can write to log file
 logging_handlers = [logging.StreamHandler()]  # Always include console
@@ -37,13 +38,14 @@ logger = logging.getLogger(__name__)
 class ProxmoxMonitor:
     """Main monitor application"""
 
-    def __init__(self, config_path: Path = None):
+    def __init__(self, config_path: Path = None, first_start_setup: 'FirstStartSetup' = None):
         if config_path is None:
             # Try to find config in standard locations
             config_path = self._find_config()
         self.config_path = config_path
         self.config = self._load_config()
         self.running = True
+        self.first_start_setup = first_start_setup
 
         # Initialize components
         self.collector = ProxmoxCollector(
@@ -59,7 +61,8 @@ class ProxmoxMonitor:
         self.bot = TelegramBot(
             token=self.config["telegram"]["token"],
             allowed_user_ids=self.config["telegram"].get("allowed_user_ids", []),
-            chat_id=self.config["telegram"].get("chat_id")
+            chat_id=self.config["telegram"].get("chat_id"),
+            first_start_setup=self.first_start_setup  # Pass setup handler to bot
         )
 
         # Register command handlers
@@ -339,7 +342,33 @@ class ProxmoxMonitor:
 
 async def main():
     """Entry point"""
-    monitor = ProxmoxMonitor()
+    # Find config path
+    standard_paths = [
+        Path("config/config.yaml"),
+        Path("/etc/proxmox-monitor/config.yaml"),
+        Path("config.yaml"),
+    ]
+    
+    config_path = None
+    for path in standard_paths:
+        if path.exists():
+            config_path = path
+            break
+    
+    if not config_path:
+        logger.error(f"Config file not found in any standard location: {standard_paths}")
+        sys.exit(1)
+    
+    # Check if first start and generate password
+    first_start_setup = FirstStartSetup(config_path)
+    if first_start_setup.is_first_start():
+        # Generate password for first start
+        generated_password = FirstStartSetup.generate_password()
+        first_start_setup.set_generated_password(generated_password)
+        logger.info("🔐 First start detected! Admin password has been generated.")
+        logger.info("📱 Send /setup command to Telegram bot and enter the password above.")
+    
+    monitor = ProxmoxMonitor(config_path=config_path, first_start_setup=first_start_setup)
     await monitor.run()
 
 
