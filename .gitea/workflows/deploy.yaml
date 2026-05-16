@@ -13,6 +13,8 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/catthehacker/ubuntu:full
     strategy:
       matrix:
         python-version: ["3.11"]
