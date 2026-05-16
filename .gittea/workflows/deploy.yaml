@@ -1,0 +1,58 @@
+name: Build and Test
+
+on:
+  push:
+    branches: 
+      - main
+      - develop
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.11-slim
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          uv sync
+
+      - name: Verify syntax
+        run: |
+          python scripts/verify_syntax.py
+
+      - name: Run tests with coverage
+        run: |
+          pytest src/tests -v --cov=src --cov-report=term-missing --cov-report=html
+
+      - name: Build package
+        run: |
+          pip install build
+          python -m build
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: htmlcov/
+          retention-days: 30
+
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-package-distributions
+          path: dist/
+          retention-days: 30
