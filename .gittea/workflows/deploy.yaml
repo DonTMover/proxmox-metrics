@@ -2,13 +2,17 @@ name: Build and Test
 
 on:
   push:
-    branches: 
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
       - main
       - develop
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, runner-1]
     container:
       image: python:3.11-slim
     strategy:
@@ -38,8 +42,7 @@ jobs:
 
       - name: Build package
         run: |
-          pip install build
-          python -m build
+          uv build
 
       - name: Upload coverage reports
         if: always()
