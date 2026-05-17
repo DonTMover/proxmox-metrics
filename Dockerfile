@@ -8,12 +8,19 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     git \
+    ca-certificates \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv package manager
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 ENV PYTHONPATH="/app/src:$PYTHONPATH"
+
+# Install Node.js 18 (via NodeSource)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy project files
 COPY . .
