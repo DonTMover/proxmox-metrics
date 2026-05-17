@@ -80,7 +80,7 @@ jobs:
           uv run pytest src/tests -v --cov=src --cov-report=term-missing --cov-report=html
 
       - name: Upload coverage reports
-        if: always()
+        if: always() && env.SKIP_ARTIFACTS != 'true'
         uses: actions/upload-artifact@v3
         with:
           name: coverage-report
@@ -88,7 +88,7 @@ jobs:
           retention-days: 30
 
       - name: Upload build artifacts
-        if: success()
+        if: success() && env.SKIP_ARTIFACTS != 'true'
         uses: actions/upload-artifact@v3
         with:
           name: python-package-distributions
