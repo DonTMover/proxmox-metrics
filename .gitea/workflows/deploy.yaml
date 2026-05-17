@@ -19,18 +19,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Docker diagnostics
+        run: |
+          echo "--- Environment ---"
+          uname -a || true
+          id || true
+          echo "--- PATH ---"
+          echo "$PATH"
+          echo "--- Docker version/info ---"
+          docker --version || true
+          docker info || true
+          echo "--- End diagnostics ---"
+
       - name: Login to registry
         env:
           REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
         run: |
+          set -eux
+          if [ -z "$REGISTRY_URL" ]; then
+            echo "REGISTRY_URL not set, skipping push" >&2
+            exit 1
+          fi
           echo "$REGISTRY_TOKEN" | docker login "$REGISTRY_URL" -u "$REGISTRY_USERNAME" --password-stdin
 
       - name: Build image
         run: |
-          IMAGE="${REGISTRY_URL}/proxmox-metrics:${GITHUB_SHA}"
-          docker build -t "$IMAGE" .
+          set -eux
+          SHORT_SHA="${GITHUB_SHA:0:8}"
+          IMAGE="${REGISTRY_URL}/proxmox-metrics:${SHORT_SHA}"
+          docker build -t "$IMAGE" -f Dockerfile.test .
           echo "$IMAGE" > image.txt
 
       - name: Push image
