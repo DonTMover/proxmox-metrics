@@ -17,11 +17,19 @@ if [ "${5-}" = "--no-host-network" ]; then
   USE_HOST_DOCKER=false
 fi
 
-if [ -z "$REGISTRY_URL" ] || [ -z "$REGISTRY_USERNAME" ] || [ -z "$REGISTRY_TOKEN" ]; then
-  echo "Missing registry args. You can also export REGISTRY_URL/REGISTRY_USERNAME/REGISTRY_TOKEN as env vars."
-  echo "Usage: $0 [job] [registry_url] [registry_username] [registry_token] [--use-host-docker]"
-  exit 2
-fi
+# Require registry args only for image-publish jobs
+case "$JOB" in
+  *push*|*build-and-push*|*publish*)
+    if [ -z "$REGISTRY_URL" ] || [ -z "$REGISTRY_USERNAME" ] || [ -z "$REGISTRY_TOKEN" ]; then
+      echo "Missing registry args for job $JOB. Provide REGISTRY_URL/REGISTRY_USERNAME/REGISTRY_TOKEN."
+      echo "Usage: $0 [job] [registry_url] [registry_username] [registry_token] [--no-host-network]"
+      exit 2
+    fi
+    ;;
+  *)
+    # no registry required
+    ;;
+esac
 
 # If on macOS and not using host network, recommend host.docker.internal
 if [ "$USE_HOST_DOCKER" = true ]; then
