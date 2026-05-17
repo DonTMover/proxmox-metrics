@@ -69,6 +69,11 @@ jobs:
         run: |
           python scripts/verify_syntax.py
 
+      - name: Install test runner
+        run: |
+          # Ensure pytest is available inside uv environment
+          uv run pip install --no-cache-dir pytest pytest-cov
+
       - name: Run tests with coverage
         run: |
           # run tests through uv so dependencies and env are handled
