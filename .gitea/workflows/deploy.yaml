@@ -13,8 +13,6 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    container:
-      image: ubuntu:22.04
     strategy:
       matrix:
         python-version: ["3.11"]
