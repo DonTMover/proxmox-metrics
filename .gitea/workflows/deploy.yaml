@@ -25,6 +25,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          # Force checkout from the public GitHub repo so CI running in containers
+          # can fetch code from the internet instead of a local Gitea at localhost:3000
+          repository: DonTMover/proxmox-metrics
+          fetch-depth: 1
 
       - name: Setup Python
         uses: actions/setup-python@v4
