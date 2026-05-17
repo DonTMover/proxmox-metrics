@@ -28,7 +28,7 @@ jobs:
       - name: Checkout code (clone from Gitea)
         env:
           GITEA_USERNAME: ${{ secrets.GITEA_USERNAME || '' }}
-          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN || '' }}
+          GITEA_TOKEN: ${{ secrets.GITEATOKEN || env.GITEA_TOKEN || '' }}
         run: |
           set -eux
           rm -rf ./* ./.git || true
@@ -79,18 +79,58 @@ jobs:
           # run tests through uv so dependencies and env are handled
           uv run pytest src/tests -v --cov=src --cov-report=term-missing --cov-report=html
 
-      - name: Upload coverage reports
-        if: always() && env.SKIP_ARTIFACTS != 'true'
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage-report
-          path: htmlcov/
-          retention-days: 30
+      - name: Upload artifacts to Gitea (via API)
+        if: always()
+        env:
+          GITEA_URL: ${{ env.GITEA_URL }}
+          GITEA_TOKEN: ${{ secrets.GITEATOKEN || env.GITEA_TOKEN || '' }}
+          GITEA_OWNER: dontmover
+          GITEA_REPO: proxmox-metrics
+        run: |
+          set -eux
+          if [ -z "${GITEA_TOKEN}" ]; then
+            echo "GITEA_TOKEN not set; skipping artifact upload"
+            exit 0
+          fi
+          # derive API base (e.g. https://code.dontmover.ru/api/v1)
+          host=$(echo "$GITEA_URL" | sed -E 's#https?://([^/]+).*#\1#')
+          API_BASE="https://$host/api/v1"
 
-      - name: Upload build artifacts
-        if: success() && env.SKIP_ARTIFACTS != 'true'
-        uses: actions/upload-artifact@v3
-        with:
-          name: python-package-distributions
-          path: dist/
-          retention-days: 30
+          # create a draft release for this run
+          TAG=${GITHUB_SHA:-"artifacts-$(date +%s)"}
+          RELEASE_NAME="ci-artifacts-${TAG}"
+          resp=$(curl -sS -X POST "${API_BASE}/repos/${GITEA_OWNER}/${GITEA_REPO}/releases" \
+            -H "Authorization: token ${GITEA_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\": \"${TAG}\", \"name\": \"${RELEASE_NAME}\", \"draft\": true}")
+          release_id=$(python -c 'import sys, json
+data=json.load(sys.stdin)
+print(data.get("id", ""))' <<<"$resp")
+          if [ -z "$release_id" ]; then
+            echo "Failed to create release, response:" >&2
+            echo "$resp" >&2
+            exit 1
+          fi
+
+          upload_asset() {
+            file_path="$1"
+            if [ ! -f "$file_path" ]; then
+              return 0
+            fi
+            name=$(basename "$file_path")
+            echo "Uploading $file_path as $name"
+            curl -sS -X POST "${API_BASE}/repos/${GITEA_OWNER}/${GITEA_REPO}/releases/${release_id}/assets?name=${name}" \
+              -H "Authorization: token ${GITEA_TOKEN}" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary "@${file_path}"
+          }
+
+          # upload htmlcov files
+          if [ -d htmlcov ]; then
+            find htmlcov -type f | while read -r f; do upload_asset "$f"; done
+          fi
+
+          # upload dist files
+          if [ -d dist ]; then
+            find dist -type f | while read -r f; do upload_asset "$f"; done
+          fi
