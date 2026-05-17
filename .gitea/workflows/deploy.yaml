@@ -18,18 +18,37 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      GITEA_URL: "http://code.dontmover.ru/dontmover/proxmox-metrics.git"
     strategy:
       matrix:
         python-version: ["3.11"]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          # Force checkout from the public GitHub repo so CI running in containers
-          # can fetch code from the internet instead of a local Gitea at localhost:3000
-          repository: DonTMover/proxmox-metrics
-          fetch-depth: 1
+      - name: Checkout code (clone from Gitea)
+        env:
+          GITEA_USERNAME: ${{ secrets.GITEA_USERNAME || '' }}
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN || '' }}
+        run: |
+          set -eux
+          rm -rf ./* ./.git || true
+          # Try unauthenticated clone first
+          if git clone --depth 1 "$GITEA_URL" .; then
+            echo "Cloned from $GITEA_URL"
+          else
+            if [ -n "$GITEA_USERNAME" ] && [ -n "$GITEA_TOKEN" ]; then
+              # Inject credentials into URL (may be required for private repos)
+              AUTH_URL=$(echo "$GITEA_URL" | sed -E 's#https?://##')
+              git clone --depth 1 "https://$GITEA_USERNAME:$GITEA_TOKEN@$AUTH_URL" .
+            else
+              echo "Failed to clone $GITEA_URL and no credentials provided" >&2
+              exit 1
+            fi
+          fi
+          if [ -n "${GITHUB_SHA-}" ]; then
+            git fetch --depth=1 origin "$GITHUB_SHA" || true
+            git checkout -qf "$GITHUB_SHA" || true
+          fi
 
       - name: Setup Python
         uses: actions/setup-python@v4
