@@ -11,9 +11,10 @@ JOB=${1:-build-and-push-image}
 REGISTRY_URL=${2:-}
 REGISTRY_USERNAME=${3:-}
 REGISTRY_TOKEN=${4:-}
-USE_HOST_DOCKER=false
-if [ "${5-}" = "--use-host-docker" ]; then
-  USE_HOST_DOCKER=true
+# Default to using host network so containers can reach host services (Gitea on localhost)
+USE_HOST_DOCKER=true
+if [ "${5-}" = "--no-host-network" ]; then
+  USE_HOST_DOCKER=false
 fi
 
 if [ -z "$REGISTRY_URL" ] || [ -z "$REGISTRY_USERNAME" ] || [ -z "$REGISTRY_TOKEN" ]; then

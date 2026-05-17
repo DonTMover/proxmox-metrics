@@ -1,5 +1,10 @@
 name: Run Tests
 
+# Note: when running this workflow locally with `act`, use host networking so the container
+# can reach a local Gitea instance on localhost:3000, for example:
+#   act -j test --container-network host
+# or use the provided script: `./scripts/run_act_host.sh test <registry> <user> <token>`
+
 on:
   push:
     branches:
