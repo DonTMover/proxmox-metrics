@@ -11,43 +11,43 @@ on:
       - develop
 
 jobs:
-    build-and-push-image:
-      runs-on: ubuntu-latest
-      outputs:
-        image: ${{ steps.vars.outputs.image }}
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v3
-
-        - name: Login to registry
-          env:
-            REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
-            REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
-            REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
-          run: |
-            echo "$REGISTRY_TOKEN" | docker login "$REGISTRY_URL" -u "$REGISTRY_USERNAME" --password-stdin
-
-        - name: Build image
-          run: |
-            IMAGE="${REGISTRY_URL}/proxmox-metrics:${GITHUB_SHA}"
-            docker build -t "$IMAGE" .
-            echo "$IMAGE" > image.txt
-
-        - name: Push image
-          run: |
-            IMAGE=$(cat image.txt)
-            docker push "$IMAGE"
-
-        - name: Set output image
-          id: vars
-          run: echo "::set-output name=image::$(cat image.txt)"
-
-    build-and-test:
-      needs: build-and-push-image
-      runs-on: [self-hosted, linux]
-      container:
-        image: ${{ needs.build-and-push-image.outputs.image }}
+  build-and-push-image:
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.vars.outputs.image }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to registry
+        env:
+          REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          echo "$REGISTRY_TOKEN" | docker login "$REGISTRY_URL" -u "$REGISTRY_USERNAME" --password-stdin
+
+      - name: Build image
+        run: |
+          IMAGE="${REGISTRY_URL}/proxmox-metrics:${GITHUB_SHA}"
+          docker build -t "$IMAGE" .
+          echo "$IMAGE" > image.txt
+
+      - name: Push image
+        run: |
+          IMAGE=$(cat image.txt)
+          docker push "$IMAGE"
+
+      - name: Set output image
+        id: vars
+        run: |
+          echo "image=$(cat image.txt)" >> $GITHUB_OUTPUT
+
+  build-and-test:
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.build-and-push-image.outputs.image }}
     strategy:
       matrix:
         python-version: ["3.11"]
