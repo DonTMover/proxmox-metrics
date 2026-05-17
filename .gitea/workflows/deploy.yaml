@@ -65,14 +65,14 @@ jobs:
         run: |
           uv sync
 
+      - name: Install dev dependencies
+        run: |
+          # Ensure development extras (pytest, pytest-cov, etc.) are installed inside uv environment
+          uv run pip install --no-cache-dir "[.dev]" || uv run pip install --no-cache-dir ".[dev]"
+
       - name: Verify syntax
         run: |
           python scripts/verify_syntax.py
-
-      - name: Install test runner
-        run: |
-          # Ensure pytest is available inside uv environment
-          uv run pip install --no-cache-dir pytest pytest-cov
 
       - name: Run tests with coverage
         run: |
